@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html>
+    <link rel="stylesheet" href="style.css">
+    <head>
+        <title>My Weather App</title>
+    </head>
+    <body>
+        <div class="card">
+            <div class="search">
+                <div class="dropdown-content">
+                    <input type="text"list="areas" id="searchBox" placeholder="Enter area name" autocomplete="off">
+                
+                    <ul>
+                        <li class="dropdown-item">Ang Mo Kio</li>
+                        <li class="dropdown-item">Clementi</li>
+                        <li class="dropdown-item">Paya Lebar</li>
+                        <li class="dropdown-item">Pulau Ubin</li>
+                        <li class="dropdown-item">Sentosa</li>
+                        <li class="dropdown-item">Tuas</li>
+                        <li class="dropdown-item">Woodlands</li>
+                    </ul>
+                </div>
+                <button><img src="images/search.png"></button>
+            </div>
+            <div class="loader">
+                <img src="images/loading.gif">
+            </div>
+            <div class = "weather">
+                <img src="images/fair(day).png" class="weather-icon">
+                <h1 class= "temp">0°C</h1>
+                <h2 class="location">Singapore</h2>
+                
+                <div class="details">
+                    <div class="col">
+                        <img src="images/humidity.png">
+                        <div>
+                            <p class="humidity">0%</p>
+                            <p>Humidity</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <img src="images/wind.png">
+                        <div>
+                            <p class="wind">0 knots</p>
+                            <p>Wind Speed</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+
+        <script>
+
+            function existsInArray(string, elements) {
+    
+                const realArray = Array.from(elements);
+
+                return realArray.some(item => {
+                    return string === item.innerHTML;
+                });
+            }
+
+            function firstItemInArray(elements) {
+                const realArray = Array.from(elements);
+                
+                return realArray.find(item => !item.classList.contains("hide"));
+            }
+
+            function selectItemInArray(elements, key){
+                const realArray = Array.from(elements);
+                const hoveredItem = realArray.find(item => item.classList.contains("hover"));
+                //if there is an already hovered item, then choose next accordingly
+                if (hoveredItem) {
+                    
+                    if (key === "ArrowUp"){
+                        //if item not top, then go up
+                        console.log(hoveredItem.innerHTML, realArray.indexOf(hoveredItem))
+                        if (realArray.indexOf(hoveredItem) > 0) {
+                            hoveredItem.classList.remove("hover");
+                            realArray[realArray.indexOf(hoveredItem)-1].classList.add("hover");
+                            realArray[realArray.indexOf(hoveredItem)-1].scrollIntoView()
+                        }
+                        //f item alr top in the list, then just remain
+                        
+                    }
+                    else if (key === "ArrowDown"){
+                        //if item alr bottom of the list go down
+                        if (realArray.indexOf(hoveredItem) < (realArray.length-1)){
+                            hoveredItem.classList.remove("hover");
+                            realArray[realArray.indexOf(hoveredItem)+1].classList.add("hover");
+                            realArray[realArray.indexOf(hoveredItem)+1].scrollIntoView()
+                        }
+                        
+                        //if not just remain
+                    }
+
+                }
+                //If no item is hovered, choose first item to be greyed, hovered
+                else{
+                    firstItemInArray(elements).classList.add("hover")
+                    firstItemInArray(elements).scrollIntoView()
+                }
+
+            }
+            
+
+            window.addEventListener("load", ()=>{
+
+                const dropdownContent = document.querySelector(".dropdown-content");
+                const dropdownItems = document.querySelectorAll(".dropdown-item");
+                const searchInput = document.querySelector(".search input")
+                const realArray = Array.from(dropdownItems);
+
+                window.addEventListener("click", windowClickEvent => {
+
+                    const hoveredItem = realArray.find(item => item.classList.contains("hover"));
+                    
+                    //if a descendent of dropdownContent is clicked on, then show dropdown list
+                    if (dropdownContent.contains(windowClickEvent.target)) {
+                        //console.log(windowClickEvent.target)
+                        dropdownContent.querySelector("ul").style.display = "block";
+                        if (hoveredItem){
+                        hoveredItem.classList.remove("hover");
+                        }
+                        if (windowClickEvent.target.classList.contains("dropdown-item")){
+                            searchInput.value = windowClickEvent.target.innerHTML;
+                        }
+
+                    //if click on anywhere else on screen, then hide dropdown list
+                    } else {
+
+                        dropdownContent.querySelector("ul").style.display = "none";
+
+                    }
+
+                });
+
+                searchInput.addEventListener("keyup", function(event) {
+                    const filter = searchInput.value.toLocaleLowerCase();
+                    dropdownContent.querySelector("ul").style.display = "block";
+
+                    dropdownItems.forEach(dropdownItem =>{
+                        if (dropdownItem.innerHTML.toLocaleLowerCase().startsWith(filter)){
+                            dropdownItem.classList.remove("hide");
+                        }
+                        else {
+                            dropdownItem.classList.add("hide");
+                        }
+                    })
+
+                    if (event.key === "ArrowUp" || event.key === "ArrowDown"){
+                        selectItemInArray(dropdownItems, event.key);
+                        //console.log(realArray);
+                        //console.log(realArray.find(item => item.classList.contains("hover")));
+                    }
+
+                    else if (event.key === "Enter"){
+
+
+                        //if the searchInput matches with any of the dropdown items
+                        if (existsInArray(searchInput.value,dropdownItems)){
+                            dropdownContent.querySelector("ul").style.display = "none";
+                            checkWeather(searchInput.value);
+                        }
+                        //if there is an item present in the dropdown list, and no selected/hovered item, then choose first item
+                        else if (firstItemInArray(dropdownItems) && !realArray.find(item => item.classList.contains("hover"))) {
+                            searchInput.value = firstItemInArray(dropdownItems).innerHTML;
+                        }
+                        //if selected hover available, then select that item in searchinput
+                        else if (realArray.find(item => item.classList.contains("hover"))){
+                            searchInput.value = realArray.find(item => item.classList.contains("hover")).innerHTML;
+                        }
+                        
+                    }
+                })
+
+
+
+            });
+
+
+
+
+
+            const url = "https://api-open.data.gov.sg/v2/real-time/api/"
+
+            const searchBox = document.querySelector(".search input");
+            const searchBtn = document.querySelector(".search button");
+
+            async function checkWeather(placeName) {
+
+                const weather_elements = ["air-temperature", "relative-humidity", "wind-speed","two-hr-forecast"];
+                var weather_data = [];
+
+                document.querySelector(".loader").style.display = "block";
+                document.querySelector(".weather").style.display = "none";
+
+                for (const weather_element of weather_elements) {
+                    var response = await fetch(url + weather_element);
+                    var data = await response.json();
+                    console.log(data);
+                    if (weather_element === "two-hr-forecast") {
+                        const place = data['data']['items'][0]['forecasts'].find(({area})=> area.includes(placeName));
+                        if (place) {
+                            var forecast = place['forecast'];
+                        } else {
+                            var forecast = "N/A";
+                            var placename = "Unknown Area";
+                        }
+                        weather_data.push(forecast);
+                    }
+                    else {
+                        var  station = data['data']['stations'].find(({name})=> name.includes(placeName));
+                        if (station) {
+                            var stationId = station['id'];
+                            weather_data.push(data['data']['readings'][0]['data'].find(({stationId})=> stationId === stationId)['value']);
+                        } else {
+                            weather_data.push("N/A");
+                        }
+                        
+                    }
+                    
+                }
+
+    
+                console.log(weather_data);
+                var temperature = weather_data[0], humidity = weather_data[1], windspeed = weather_data[2]; forecast = weather_data[3];
+                //var  stationId = data['data']['stations'].find(({name})=> name === area)['id'];
+                //console.log(stationId)
+                //var temperature = data['data']['readings'][0]['data'].find(({stationId})=> stationId === stationId)['value'];
+                document.querySelector(".temp").innerHTML = temperature + "°C";
+                document.querySelector(".location").innerHTML = placeName;
+                document.querySelector(".humidity").innerHTML = humidity + "%";
+                document.querySelector(".wind").innerHTML = windspeed + " knots";
+
+                if (forecast === "Fair (Night)") {
+                    document.querySelector(".weather-icon").src = "images/fair(night).png";
+                } else if (forecast.includes("Fair")) {
+                    document.querySelector(".weather-icon").src = "images/fair(day).png";
+                } else if (forecast === "Partly Cloudy (Night)") {
+                    document.querySelector(".weather-icon").src = "images/cloudy(night).png";
+                } else if (forecast.includes("Cloudy")) {
+                    document.querySelector(".weather-icon").src = "images/cloudy.png";
+                } else if (forecast.includes("Hazy")) {
+                    document.querySelector(".weather-icon").src = "images/hazy.png";
+                } else if (forecast === "Windy") {
+                    document.querySelector(".weather-icon").src = "images/windy.png";
+                } else if (forecast === "Mist") {
+                    document.querySelector(".weather-icon").src = "images/mist.png";
+                } else if (forecast === "Fog") {
+                    document.querySelector(".weather-icon").src = "images/fog.png";
+                } else if (forecast === "Light Rain" || forecast === "Passing Showers" || forecast === "Light Showers") {
+                    document.querySelector(".weather-icon").src = "images/rain.png";
+                } else if (forecast === "Moderate Rain" || forecast === "Heavy Rain" || forecast === "Showers" || forecast === "Heavy Showers") {
+                    document.querySelector(".weather-icon").src = "images/heavyrain.png";
+                } else if (forecast === "Thundery Showers" || forecast === "Heavy Thundery Showers") {
+                    document.querySelector(".weather-icon").src = "images/thunderyshowers.png";
+                } else if (forecast === "Heavy Thundery Showers with Gusty Winds") {
+                    document.querySelector(".weather-icon").src = "images/thunderyshowerswindy.png";
+                } else {
+                    document.querySelector(".weather-icon").src = "images/unknown.png";
+                }
+
+                document.querySelector(".weather").style.display = "block";
+                document.querySelector(".loader").style.display = "none";
+
+
+            }
+            searchBtn.addEventListener("click", ()=>{
+                if (searchBox.value){
+                    checkWeather(searchBox.value);
+                }
+            });
+
+        </script>
+
+
+    </body>
+</html>
